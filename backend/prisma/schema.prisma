@@ -1,0 +1,125 @@
+// Prisma schema for Nexus Order Management
+// Run: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  orders    Order[]   @relation("UserOrders")
+  invoices  Invoice[] @relation("UserInvoices")
+  clients   Client[]  @relation("UserClients")
+  requests  Request[] @relation("UserRequests")
+  auditLogs AuditLog[] @relation("UserAuditLogs")
+}
+
+enum UserRole {
+  ADMIN
+  CLIENT
+}
+
+model Client {
+  id       String @id @default(uuid())
+  name     String
+  user     User   @relation("UserClients", fields: [userId], references: [id])
+  userId   String
+  requests Request[] @relation("ClientRequests")
+  subscriptions Subscription[] @relation("ClientSubscriptions")
+}
+
+model Order {
+  id       String @id @default(uuid())
+  details  String
+  user     User   @relation("UserOrders", fields: [userId], references: [id])
+  userId   String
+  subscription Subscription?
+}
+
+model Invoice {
+  id       String @id @default(uuid())
+  amount   Float
+  user     User   @relation("UserInvoices", fields: [userId], references: [id])
+  userId   String
+}
+
+enum OrderStatus {
+  NEW
+  IN_PROGRESS
+  COMPLETED
+  SUBMITTED_TO_VISP
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+model Request {
+  id        String  @id @default(uuid())
+  client    Client  @relation("ClientRequests", fields: [clientId], references: [id])
+  clientId  String
+  user      User    @relation("UserRequests", fields: [userId], references: [id])
+  userId    String
+  type      String
+  status    RequestStatus
+  details   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum RequestStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model Subscription {
+  id        String  @id @default(uuid())
+  client    Client  @relation("ClientSubscriptions", fields: [clientId], references: [id])
+  clientId  String
+  order     Order   @relation(fields: [orderId], references: [id])
+  orderId   String  @unique
+  status    SubscriptionStatus
+  startDate DateTime
+  endDate   DateTime?
+  cancellationRequested Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PENDING_CANCELLATION
+  CANCELLED
+}
+
+model BillingSettings {
+  id           String   @id @default(uuid())
+  vatRate      Float
+  companyName  String
+  companyAddress String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String  @id @default(uuid())
+  user      User    @relation("UserAuditLogs", fields: [userId], references: [id])
+  userId    String
+  action    String
+  entity    String
+  entityId  String
+  timestamp DateTime @default(now())
+  details   Json?
+} 

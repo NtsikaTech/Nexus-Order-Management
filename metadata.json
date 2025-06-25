@@ -1,0 +1,6 @@
+{
+  "name": "Nexus- Order Management ",
+  "description": "A frontend application for managing ICT service orders, designed for reselling services via platforms like Afrihost VISP. Features include order creation, tracking, and administration with a responsive UI.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
